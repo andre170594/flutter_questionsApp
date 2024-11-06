@@ -7,6 +7,7 @@ import 'package:my_quesions_app/widgets/option_card.dart';
 import 'package:my_quesions_app/widgets/submit_button.dart';
 
 import '../widgets/question_widget.dart';
+import 'package:my_quesions_app/models/db_connect.dart';
 
 
 
@@ -18,45 +19,26 @@ class HomeScreen extends StatefulWidget{
 }
 
 class HomeScreenState extends State<HomeScreen>{
-
-  //demo questions
-   final List<ParOptionsAnswers> listOpts = [
-        ParOptionsAnswers(option: 'opt 1', answers: false, selected: false),
-        ParOptionsAnswers(option: 'opt 2', answers: true,  selected: false),
-        ParOptionsAnswers(option: 'opt 3', answers: false, selected: false),
-        ParOptionsAnswers(option: 'opt 4', answers: false, selected: false)
-  ];
-   final List<ParOptionsAnswers> listOpts2 = [
-     ParOptionsAnswers(option: 'opt 1', answers: false, selected: false),
-     ParOptionsAnswers(option: 'opt 2', answers: true,  selected: false),
-     ParOptionsAnswers(option: 'opt 3', answers: false, selected: false),
-     ParOptionsAnswers(option: 'opt 4', answers: false, selected: false),
-     ParOptionsAnswers(option: 'opt 5', answers: true, selected: false),
-     ParOptionsAnswers(option: 'opt 6', answers: false, selected: false)
-   ];
-  late final List<Question>  questions = [
-     Question(
-         pergunta: 'pergunta exemplo bla bla bla bla',
-         listOpt: listOpts,
-         explanation: 'explicação',
-         numCorrect: 1
-     ),
-    Question(
-        pergunta: 'pergunta2 exemplo bla bla bla bla',
-        listOpt: listOpts2,
-        explanation: 'explicação2',
-        numCorrect: 2
-    ),
-    Question(
-        pergunta: 'pergunta3 exemplo bla bla bla bla',
-        listOpt: listOpts,
-        explanation: 'explicação3',
-        numCorrect: 1
-    )
-  ];
-
-
+  List<Question> questions = [];
   int index =0;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchQuestionsFromDB();
+  }
+
+  Future<void> fetchQuestionsFromDB() async {
+    DBconnect db = DBconnect();
+    List<Question> fetchedQuestions = await db.fetchQuestions();
+
+    setState(() {
+      questions = fetchedQuestions;
+      isLoading = false;
+    });
+  }
+
 
   void nextQuestion(){
     if(index == questions.length-1) {
@@ -67,7 +49,6 @@ class HomeScreenState extends State<HomeScreen>{
       });
     }
   }
-
   void selectChoice(ParOptionsAnswers option){
     setState(() {
       // Count the currently selected options
@@ -79,7 +60,6 @@ class HomeScreenState extends State<HomeScreen>{
       }
     });
   }
-
   void submitQuestions(){
 
   }
@@ -92,7 +72,11 @@ class HomeScreenState extends State<HomeScreen>{
         title: const Text('quiz app'),
         shadowColor: Colors.transparent,
       ),
-      body: Container(
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : questions.isEmpty
+          ? const Center(child: Text('No questions available.'))
+          : Container(
         color: background,
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 10.0),
@@ -105,13 +89,12 @@ class HomeScreenState extends State<HomeScreen>{
             ),
             const Divider(color: neutral),
             const SizedBox(height: 25.0),
-            for(int i =0; i < questions[index].listOpt.length;i++)
+            for (int i = 0; i < questions[index].listOpt.length; i++)
               OptionCard(
-                  option: questions[index].listOpt[i].option.toString(),
-                  onTap: () => selectChoice(questions[index].listOpt[i]),
-                  isSelected: questions[index].listOpt[i].selected,
+                option: questions[index].listOpt[i].option.toString(),
+                onTap: () => selectChoice(questions[index].listOpt[i]),
+                isSelected: questions[index].listOpt[i].selected,
               )
-
           ],
         ),
       ),
